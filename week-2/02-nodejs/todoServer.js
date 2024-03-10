@@ -39,11 +39,67 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  module.exports = app;
+const express = require("express");
+const bodyParser = require("body-parser");
+
+const app = express();
+
+app.use(express.json());
+
+const todos = [];
+
+const matchTodo = (id) => {
+  for (const element of todos) {
+    if (element.id == id) return element;
+  }
+  return null;
+};
+
+app
+  .route("/todos")
+  .get((req, res) => {
+    res.json(todos);
+  })
+  .post((req, res) => {
+    const newTodo = req.body;
+    newTodo.id = todos.length + 1;
+    todos.push(newTodo);
+    res.status(201).json({ id: newTodo.id });
+  });
+
+app
+  .route("/todos/:id")
+  .get((req, res) => {
+    const id = req.params.id;
+    const currTodo = matchTodo(id);
+    if (currTodo == null) {
+      res.status(404).send("Todo not found");
+    }
+    res.status(200).json(currTodo);
+  })
+  .put((req, res) => {
+    const id = req.params.id;
+    const currTodo = matchTodo(id);
+    if (currTodo == null) {
+      res.status(404).send("Todo not found");
+    }
+    const idx = todos.indexOf(currTodo);
+    todos[idx].title = req.body.title;
+    todos[idx].completed = req.body.completed;
+    res.status(200).json(todos[idx]);
+  })
+  .delete((req, res) => {
+    const id = req.params.id;
+    const currTodo = matchTodo(id);
+    if (currTodo == null) {
+      res.status(404).send("Todo not found");
+    }
+    todos.splice(todos.indexOf(currTodo), 1);
+    res.status(200).json(currTodo);
+  });
+
+app.all("*", (req, res) => {
+  res.status(404).send("Route not found");
+});
+
+module.exports = app;
